@@ -137,7 +137,30 @@ kbd{font:600 12px var(--f-mono);border:1px solid currentColor;border-radius:5px;
 .badge{font:600 12px var(--f-mono);padding:5px 10px;border-radius:999px;background:var(--sun);color:var(--sun-ink)}
 .lesson{margin:0;color:var(--muted)}
 .copied{font-size:13px;color:var(--good);margin:0}
-@media (prefers-reduced-motion:reduce){.card,.pl-event,.bar i{animation:none}}
+.you65{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center;background:var(--bg);border-radius:14px;padding:8px 14px 8px 6px}
+.mood{margin:4px 0 2px;font:500 19px/1.2 var(--f-display);text-wrap:balance}
+.fig{width:100%;height:auto;overflow:visible}
+.fig *{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;transition:opacity .5s,transform .6s cubic-bezier(.3,1.4,.5,1),d .5s}
+.fig .eye{fill:var(--ink);stroke:none}
+.fig .ground{stroke:var(--line)}
+.fig .sun circle{fill:var(--sun);stroke:none} .fig .rays{stroke:var(--sun)}
+.fig .cloud path:first-child{fill:var(--muted);stroke:none;opacity:.5} .fig .rain{stroke:var(--accent)}
+.fig .plant *{stroke:var(--good)} .fig .plant path:last-child{fill:var(--good)}
+.fig .suit rect{fill:var(--accent);stroke:var(--accent)} .fig .suit path{stroke:var(--accent)}
+.fig .cup{fill:var(--paper);stroke:var(--ink)}
+.fig .arm{transform-origin:80px 60px}
+.fig .sun,.fig .cloud,.fig .plant,.fig .suit,.fig .cup{opacity:0}
+.fig[data-tier="0"] .cloud,.fig[data-tier="1"] .cup,.fig[data-tier="2"] .cup,.fig[data-tier="2"] .sun,.fig[data-tier="2"] .plant,.fig[data-tier="3"] .sun,.fig[data-tier="3"] .plant,.fig[data-tier="3"] .suit{opacity:1}
+.fig .who{animation:bob 3.2s ease-in-out infinite}
+.fig[data-tier="0"] .who{animation-duration:5s;transform:translateY(2px)}
+.fig[data-tier="3"] .who{animation:hop .7s ease-in-out infinite}
+.fig .rain{animation:rain 1s linear infinite}
+.fig .rays{transform-origin:134px 24px;animation:spin 14s linear infinite}
+@keyframes bob{50%{transform:translateY(-2px)}}
+@keyframes hop{50%{transform:translateY(-7px)}}
+@keyframes rain{from{transform:translateY(-3px);opacity:1}to{transform:translateY(5px);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.card,.pl-event,.bar i,.fig *{animation:none!important}}
 </style></head><body>
 
 <div class="wrap">
@@ -167,6 +190,25 @@ kbd{font:600 12px var(--f-mono);border:1px solid currentColor;border-radius:5px;
     <input id="amt" type="range" min="5" max="500" step="5" value="100">
   </div>
   <label class="toggle"><input id="match" type="checkbox"> <span><b>My employer matches</b> what I put in (many group plans do)</span></label>
+
+  <div class="you65">
+    <svg id="fig" class="fig" viewBox="0 0 160 130" role="img" aria-labelledby="mood" data-tier="1">
+      <g class="sun"><circle cx="134" cy="24" r="11"/><path class="rays" d="M134 6v-4M134 46v-4M116 24h-4M156 24h-4M121 11l-3-3M147 37l3 3M147 11l3-3M121 37l-3 3"/></g>
+      <g class="cloud"><path d="M18 32a9 9 0 0 1 16-7a8 8 0 0 1 15 3a6 6 0 0 1 0 12h-28a6 6 0 0 1-3-8z"/><path class="rain" d="M24 46l-2 6M34 46l-2 6M44 46l-2 6"/></g>
+      <line class="ground" x1="6" y1="122" x2="154" y2="122"/>
+      <g class="plant"><path d="M28 122v-16"/><path d="M28 112c-7-1-11-6-10-12c7 1 11 6 10 12zM28 108c7-1 11-6 10-12c-7 1-11 6-10 12z"/></g>
+      <g class="suit"><rect x="108" y="100" width="22" height="22" rx="3"/><path d="M114 100v-5h10v5"/></g>
+      <g class="who">
+        <circle cx="80" cy="38" r="12"/>
+        <circle class="eye" cx="75.5" cy="36" r="1.4"/><circle class="eye" cx="84.5" cy="36" r="1.4"/>
+        <path id="mouth" class="mouth" d="M75 43 Q80 46 85 43"/>
+        <path d="M80 50v38M80 88l-11 34M80 88l11 34"/>
+        <g id="armL" class="arm"><path d="M80 60v24"/></g>
+        <g id="armR" class="arm"><path d="M80 60v24"/><path class="cup" d="M76 84h8l-1 8h-6z"/></g>
+      </g>
+    </svg>
+    <div><div class="eyebrow">65-year-old you</div><p id="mood" class="mood"></p><small class="fine">in an unlucky future · ≈ <span id="moodInc"></span>/mo</small></div>
+  </div>
 
   <div class="eyebrow">1,000 futures, ages <span id="ageA"></span>–65</div>
   <canvas class="fan" id="fan" role="img" aria-label="Fan chart of savings across 1,000 simulated futures"></canvas>
@@ -274,9 +316,22 @@ function recompute(){
   $('insight').innerHTML=S.p10>S.late50
     ? `<b>Starting now beats luck.</b> Your unluckiest 10% of futures still end higher than the <i>typical</i> future where you wait until ${S.age+10} to start (${kmoney(S.late50)}).`
     : `<b>Time is the lever.</b> Waiting until ${S.age+10} to start turns the typical future from ${kmoney(S.p50)} into ${kmoney(S.late50)}, with the same $${S.amt}/mo.`;
-  drawFan();
+  drawFan();setMood(S.p10*.04/12);
   // refresh numbers already in the feed
   document.querySelectorAll('.card[data-w]').forEach(fillCard);
+}
+
+// ---------- 65-year-old you: reacts to the unlucky-future monthly income ----------
+const MOODS=[ // [arm L, arm R, mouth control y, line]
+ [12,-12,40,'Still picking up shifts. Not doomed, just tired.'],
+ [22,-100,46,'Getting by. The coffee is on you.'],
+ [35,-100,48,'Comfortable. Even the plants are thriving.'],
+ [125,-125,50,'Booked the trip. Then booked another one.']];
+function setMood(m){
+  const t=m<120?0:m<350?1:m<900?2:3,[l,r,y,txt]=MOODS[t],f=$('fig');
+  f.dataset.tier=t;$('armL').style.transform=`rotate(${l}deg)`;$('armR').style.transform=`rotate(${r}deg)`;
+  $('mouth').setAttribute('d',`M75 43 Q80 ${y} 85 43`);$('mouth').style.d=`path("M75 43 Q80 ${y} 85 43")`;
+  $('mood').textContent=txt;$('moodInc').textContent=money(m);
 }
 
 // ---------- Feed ----------
