@@ -10,6 +10,7 @@ Built for the Canada Life Future Me Challenge.
 - **Fear-picker stress test:** choose your fears (AI taking your job, rent, a crash, inflation, a pandemic, life emergencies), and they all happen to you.
 - **Year-by-year game:** make the call at each shock (sell, hold or buy the dip; cash out or use the emergency fund; spend the raise or save it) while "Autopilot you" runs alongside.
 - **You vs Autopilot you vs Doomscroll you:** the same world with the same luck, so the gap comes from decisions. Ends with badges and a postcard from 65-year-old you.
+- **"Future you" companion:** a corner stick figure that cheers or slumps (with a speech bubble) after every decision you make.
 - **A feed of 1,000 futures:** a Monte Carlo fan chart plus individual futures you can scroll and play, with behavioural nudges and "Tiny Moves" built into the scroll.
 
 ## Run it

@@ -160,7 +160,30 @@ kbd{font:600 12px var(--f-mono);border:1px solid currentColor;border-radius:5px;
 @keyframes hop{50%{transform:translateY(-7px)}}
 @keyframes rain{from{transform:translateY(-3px);opacity:1}to{transform:translateY(5px);opacity:0}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.card,.pl-event,.bar i,.fig *{animation:none!important}}
+.buddy{position:fixed;z-index:20;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;pointer-events:none}
+.buddy-btn{pointer-events:auto;width:92px;padding:6px 4px 0;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 24px rgb(10 10 40 / .14)}
+.buddy-btn svg{display:block;width:100%;height:auto;overflow:visible}
+.buddy-name{font:600 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:4px;background:var(--bg);padding:1px 6px;border-radius:6px}
+.buddy svg *{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;transition:opacity .4s,transform .55s cubic-bezier(.3,1.5,.5,1)}
+.buddy .eye{fill:var(--ink);stroke:none}
+.buddy .spark path{fill:var(--sun);stroke:none}
+.buddy .tear{fill:var(--accent);stroke:none}
+.buddy .arm{transform-origin:50px 50px}
+.buddy .bl{transform:rotate(22deg)} .buddy .br{transform:rotate(-22deg)}
+.buddy .spark,.buddy .tear,.buddy .brow{opacity:0}
+.buddy .bod{animation:bob 3s ease-in-out infinite}
+.buddy[data-mood="happy"] .bl{transform:rotate(128deg)} .buddy[data-mood="happy"] .br{transform:rotate(-128deg)}
+.buddy[data-mood="happy"] .spark{opacity:1;animation:twinkle 1.2s ease-in-out infinite}
+.buddy[data-mood="happy"] .bod{animation:hop .6s ease-in-out 3}
+.buddy[data-mood="sad"] .bl{transform:rotate(6deg)} .buddy[data-mood="sad"] .br{transform:rotate(-6deg)}
+.buddy[data-mood="sad"] .tear,.buddy[data-mood="sad"] .brow{opacity:1}
+.buddy[data-mood="sad"] .bod{animation:none;transform:translateY(4px)}
+.buddy[data-mood="sad"] .buddy-btn{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+@keyframes twinkle{50%{opacity:.35}}
+.bubble{position:absolute;right:0;bottom:100%;margin-bottom:10px;width:max-content;max-width:min(240px,calc(100vw - 40px));background:var(--ink);color:var(--bg);font:600 14px/1.3 var(--f-body);padding:9px 13px;border-radius:14px 14px 4px 14px;animation:pop .25s ease both}
+dialog .buddy{z-index:30}
+@media (max-width:600px){.buddy-btn{width:66px}.buddy-name{display:none}}
+@media (prefers-reduced-motion:reduce){.card,.pl-event,.bar i,.fig *,.buddy *{animation:none!important}}
 </style></head><body>
 
 <div class="wrap">
@@ -246,6 +269,25 @@ kbd{font:600 12px var(--f-mono);border:1px solid currentColor;border-radius:5px;
   </div>
 </dialog>
 
+<div class="buddy" id="buddy" data-mood="ok">
+  <div class="bubble" id="bubble" role="status" aria-live="polite" hidden></div>
+  <button class="buddy-btn" id="buddyBtn" aria-label="Future you. Tap for a pep talk.">
+    <svg viewBox="0 0 100 118" aria-hidden="true">
+      <g class="spark"><path d="M12 22l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"/><path d="M88 12l2 4 4 2-4 2-2 4-2-4-4-2 4-2z"/></g>
+      <g class="bod">
+        <circle cx="50" cy="28" r="13"/>
+        <circle class="eye" cx="45.5" cy="26" r="1.6"/><circle class="eye" cx="54.5" cy="26" r="1.6"/>
+        <path class="brow" d="M41 20l7 2M59 20l-7 2"/>
+        <path class="tear" d="M44 31c0 3-1.5 4.5-2.5 4.5S39 34 39 31l2.5-4z"/>
+        <path id="bMouth" class="mouth" d="M45 33 Q50 36 55 33"/>
+        <path d="M50 41v36M50 77l-11 30M50 77l11 30"/>
+        <g class="arm bl"><path d="M50 50v24"/></g><g class="arm br"><path d="M50 50v24"/></g>
+      </g>
+    </svg>
+  </button>
+  <span class="buddy-name">future you</span>
+</div>
+
 <script>
 (()=>{
 const N=1000, MAXY=50, Y0=new Date().getFullYear();
@@ -316,7 +358,7 @@ function recompute(){
   $('insight').innerHTML=S.p10>S.late50
     ? `<b>Starting now beats luck.</b> Your unluckiest 10% of futures still end higher than the <i>typical</i> future where you wait until ${S.age+10} to start (${kmoney(S.late50)}).`
     : `<b>Time is the lever.</b> Waiting until ${S.age+10} to start turns the typical future from ${kmoney(S.p50)} into ${kmoney(S.late50)}, with the same $${S.amt}/mo.`;
-  drawFan();setMood(S.p10*.04/12);
+  drawFan();setMood(S.p10*.04/12);reactPlan();
   // refresh numbers already in the feed
   document.querySelectorAll('.card[data-w]').forEach(fillCard);
 }
@@ -333,6 +375,38 @@ function setMood(m){
   $('mouth').setAttribute('d',`M75 43 Q80 ${y} 85 43`);$('mouth').style.d=`path("M75 43 Q80 ${y} 85 43")`;
   $('mood').textContent=txt;$('moodInc').textContent=money(m);
 }
+
+// ---------- Corner buddy: future you reacts to every decision ----------
+const pickL=a=>a[Math.floor(Math.random()*a.length)];
+const SAY={
+ calm:['Steady. I felt that.','Calm hands. Love that for us.','Doing nothing was the move.'],
+ bold:['Bold. I like it.','Scary, but smart.'],
+ fun:['A little fun is allowed.','Pics or it didn’t happen.'],
+ panic:['Oof. That one hurts later.','Ah. We panicked.','Future me is wincing.'],
+ drift:['Fun now, oof later.','Lifestyle creep got us.'],
+ up:['Future me felt that.','Ooh, coffee upgrade.','Every future just moved up.','Yes! Keep going.'],
+ down:['Oof. I felt that too.','Wait, come back.'],
+ matchOn:['Free money?! Yes please.'],matchOff:['You’re leaving free money on the table…'],
+ move:['That counts. Real progress.','Five minutes well spent.'],
+ start:['Okay. Let’s do this together.','Deep breath. We’ve got this.'],
+ win:['We did it. Thanks, past me.','Look at us. Look at us!'],lose:['We can do better. Rematch?','Rough one. Try it again?'],
+ poke:['The future is still worth planning for.','You’re doing better than you think.','Small and boring wins.','Close the doom app. Open this one.']};
+const MOUTH={happy:'M44 32 Q50 40 56 32',ok:'M45 33 Q50 36 55 33',sad:'M45 36 Q50 31 55 36'};
+let bubT,prevPlan=null;
+function react(mood,line){
+  const b=$('buddy');b.dataset.mood=mood;$('bMouth').setAttribute('d',MOUTH[mood]);
+  if(mood==='happy'){const bod=b.querySelector('.bod');bod.style.animation='none';bod.offsetWidth;bod.style.animation=''}
+  if(line){$('bubble').hidden=false;$('bubble').textContent=line;clearTimeout(bubT);bubT=setTimeout(()=>{$('bubble').hidden=true},3800)}
+}
+function reactPlan(){
+  if(prevPlan){
+    if(S.match!==prevPlan.match)react(S.match?'happy':'sad',pickL(S.match?SAY.matchOn:SAY.matchOff));
+    else if(S.amt>prevPlan.amt)react('happy',pickL(SAY.up));
+    else if(S.amt<prevPlan.amt)react(S.amt<50?'sad':'ok',pickL(SAY.down));
+  }
+  prevPlan={amt:S.amt,match:S.match};
+}
+$('buddyBtn').onclick=()=>react($('buddy').dataset.mood,pickL(SAY.poke));
 
 // ---------- Feed ----------
 const order=[...Array(N).keys()];{const r=mulberry(42);for(let i=N-1;i>0;i--){const j=Math.floor(r()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
@@ -394,7 +468,7 @@ function addNudge(){
     let done={};try{done=JSON.parse(localStorage.getItem('hs-moves')||'{}')}catch(e){}
     el.innerHTML=`<div class="eyebrow">Tiny moves this week</div><h3>Pick one. Five minutes counts.</h3>
     <ul class="moves">${MOVES.map((m,i)=>`<li><label><input type="checkbox" id="mv${nudgeN}-${i}" data-mv="${i}" ${done[i]?'checked':''}><span>${m[0]}<small>${m[1]}</small></span></label></li>`).join('')}</ul>`;
-    el.addEventListener('change',e=>{const i=e.target.dataset.mv;if(i==null)return;done[i]=e.target.checked;try{localStorage.setItem('hs-moves',JSON.stringify(done))}catch(_){}});
+    el.addEventListener('change',e=>{const i=e.target.dataset.mv;if(i==null)return;done[i]=e.target.checked;if(e.target.checked)react('happy',pickL(SAY.move));try{localStorage.setItem('hs-moves',JSON.stringify(done))}catch(_){}});
   }
   el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.bump){$('amt').value=Math.min(500,S.amt+ +b.dataset.bump);recompute();b.textContent='Done. Every future just moved up.';b.disabled=true}
@@ -474,11 +548,14 @@ async function play(w,title){
   const auto=await runWorld(w,evs,autoPick),doom=await runWorld(w,evs,doomPick);
   $('plTitle').textContent=title;$('plEvent').hidden=true;$('plEnd').hidden=true;$('plSkip').hidden=false;
   if(!PL.open)PL.showModal();
+  PL.append($('buddy'));react('ok',pickL(SAY.start));
   try{
     const G=await runWorld(w,evs,decide,async(G,j,res)=>{
       if(run!==playing)throw 'stop';
       $('plAge').textContent=S.age+j+1;$('plYear').textContent=Y0+j+1;$('plBal').textContent=money(G.b);drawPl(G.path,auto.path,evs);
-      if(res){const box=$('plEvent');box.insertAdjacentHTML('beforeend',`<p class="out">${res.out||REACT[res.o.tag]}</p>`);await sleep(RM?400:1500);if(run!==playing)throw 'stop';box.hidden=true;$('plSkip').hidden=false}
+      if(res){const tg=res.o.tag,good=tg==='gamble'?/mooned/.test(res.out||''):!/panic|drift/.test(tg);
+        react(good?'happy':'sad',tg==='gamble'?(good?'Lucky. Please never do that again.':'The meme coin. Of course.'):pickL(SAY[tg]));
+        const box=$('plEvent');box.insertAdjacentHTML('beforeend',`<p class="out">${res.out||REACT[res.o.tag]}</p>`);await sleep(RM?400:1500);if(run!==playing)throw 'stop';box.hidden=true;$('plSkip').hidden=false}
       else if(!fast)await sleep(RM?15:110);
     });
     endScreen(G,auto,doom,title,w);
@@ -488,6 +565,7 @@ function endScreen(G,auto,doom,title,w){
   $('plSkip').hidden=true;
   const diff=G.b-auto.b,rows=[['You',G.b,'you'],['Autopilot you',auto.b,'auto'],['Doomscroll you',doom.b,'doom']],m=Math.max(...rows.map(r=>r[1]))||1;
   const badges=[...new Set(G.picks.map(p=>p.o.bd).filter(Boolean))];
+  react(diff>=-500?'happy':'sad',pickL(diff>=-500?SAY.win:SAY.lose));
   const head=!G.picks.length?'A quiet life. Autopilot did all the work.':Math.abs(diff)<500?'You matched autopilot. Calm is a superpower.':diff>0?`Your calls added ${kmoney(diff)} on top of autopilot.`:`Your calls cost ${kmoney(-diff)} versus autopilot.`;
   const memos=G.picks.slice(-3).map(p=>`<p>${p.o.m(Y0+p.e.t)}</p>`).join('');
   const share=`I lived ${title} on Hopescroll and ended at 65 with ${kmoney(G.b)} (autopilot me: ${kmoney(auto.b)}, doomscroll me: ${kmoney(doom.b)}). Same world, same luck. Different choices.`;
@@ -506,7 +584,7 @@ function endScreen(G,auto,doom,title,w){
 }
 $('plSkip').onclick=()=>{fast=true};
 $('plClose').onclick=()=>{playing++;PL.close()};
-PL.addEventListener('close',()=>{playing++});
+PL.addEventListener('close',()=>{playing++;document.body.append($('buddy'))});
 $('feed').addEventListener('click',e=>{const b=e.target.closest('[data-live]');if(b)play(worlds[+b.dataset.live],`Future #${String(+b.dataset.live+1).padStart(4,'0')}`)});
 
 // Fear picker: build a world where everything you picked actually happens.
