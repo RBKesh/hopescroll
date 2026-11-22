@@ -1,0 +1,488 @@
+﻿<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Hopescroll</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Doomscrolling shows you one bad future at a time. Hopescroll shows you a thousand, and how your plan holds up in each.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@500;700&display=swap">
+<style>
+/* Layout: sticky "control room" on the left (your plan + the fan of 1,000 futures); an endless feed of individual futures on the right. */
+:root{
+  --bg:#F2F3FA; --surface:#FFFFFF; --ink:#15153A; --muted:#5A5D7C; --line:#DADCEC;
+  --accent:#3B2BEA; --accent-ink:#FFFFFF; --sun:#FFC83D; --sun-ink:#2A2100; --good:#0B8A5C; --bad:#D2443A;
+  --paper:#FFF6DA; --paper-ink:#3A2E12;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Instrument Sans",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --f-hand:"Caveat","Segoe Print","Bradley Hand",cursive;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0B1C; --surface:#15152C; --ink:#ECECFB; --muted:#9C9EC4; --line:#29294A;
+  --accent:#8F86FF; --accent-ink:#0B0B1C; --sun:#FFD15C; --sun-ink:#2A2100; --good:#45D29C; --bad:#FF7A6E;
+  --paper:#2B2615; --paper-ink:#F6E8C0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0B1C; --surface:#15152C; --ink:#ECECFB; --muted:#9C9EC4; --line:#29294A;
+  --accent:#8F86FF; --accent-ink:#0B0B1C; --sun:#FFD15C; --sun-ink:#2A2100; --good:#45D29C; --bad:#FF7A6E;
+  --paper:#2B2615; --paper-ink:#F6E8C0; color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 64px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 32px;margin-bottom:28px}
+.brand{font:800 clamp(40px,6vw,64px)/.9 var(--f-display);letter-spacing:-.03em;margin:0}
+.brand span{color:var(--accent)}
+.lede{max-width:52ch;margin:0;color:var(--muted);font-size:17px;text-wrap:balance}
+.lede b{color:var(--ink);font-weight:600}
+.grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:18px}
+@media (max-width:880px){.panel{position:static}}
+.eyebrow{font:600 11px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ctl{display:grid;gap:6px}
+.ctl-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctl label{font-weight:600}
+.ctl output{font:600 18px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+.toggle{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--muted);cursor:pointer}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.toggle b{color:var(--ink)}
+.fan{width:100%;aspect-ratio:16/10;max-width:100%;display:block}
+.verdict{font:800 clamp(22px,2.6vw,28px)/1.15 var(--f-display);letter-spacing:-.01em;margin:0;text-wrap:balance}
+.verdict em{font-style:normal;background:var(--sun);color:var(--sun-ink);padding:0 .18em;border-radius:4px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{border-top:1px solid var(--line);padding-top:8px}
+.stat .n{font:600 20px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat .l{font-size:13px;color:var(--muted)}
+.insight{font-size:14px;margin:0;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.fine{font-size:12px;color:var(--muted);margin:0}
+.feedhead{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px 12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid var(--line);margin-bottom:18px}
+.feedhead h2{font:800 22px var(--f-display);margin:0}
+.counter{font:600 13px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.counter b{color:var(--ink)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.feed{display:grid;gap:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;animation:rise .5s ease both}
+@keyframes rise{from{transform:translateY(10px)}to{transform:none}}
+.card-top{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-bottom:1px solid var(--line);font:600 12px var(--f-mono);letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.card-body{padding:18px 20px;display:grid;gap:16px}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.timeline li{display:grid;grid-template-columns:62px 1fr;gap:12px;align-items:baseline}
+.yr{font:600 13px var(--f-mono);padding:2px 8px;border-radius:6px;text-align:center;background:var(--bg)}
+.yr.bad{color:var(--bad)} .yr.good{color:var(--good)}
+.head{font:500 19px/1.25 var(--f-display);text-wrap:balance}
+.spark{width:100%;height:110px;display:block}
+.result{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:baseline}
+.result .big{font:600 26px var(--f-mono);font-variant-numeric:tabular-nums}
+.result .sub{color:var(--muted);font-size:14px}
+.postcard{background:var(--paper);color:var(--paper-ink);border-radius:6px;padding:16px 20px 14px;transform:rotate(-.6deg);box-shadow:0 1px 0 var(--line);font:500 22px/1.25 var(--f-hand)}
+.postcard p{margin:0 0 6px}
+.postcard .sig{text-align:right;font-weight:700}
+.nudge{border:2px dashed var(--accent);border-radius:18px;padding:20px;display:grid;gap:12px;background:var(--surface)}
+.nudge h3{font:800 22px/1.15 var(--f-display);margin:0;text-wrap:balance}
+.nudge p{margin:0;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+button{font:600 15px var(--f-body);border-radius:999px;padding:10px 18px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.moves{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.moves label{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;cursor:pointer;font-size:15px}
+.moves input{width:18px;height:18px;margin-top:3px;accent-color:var(--good)}
+.moves small{display:block;color:var(--muted);font-size:13px}
+.moves input:checked + span{text-decoration:line-through;text-decoration-color:var(--good);opacity:.7}
+.more{justify-self:center}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 28px;align-items:center;background:var(--accent);color:var(--accent-ink);border-radius:22px;padding:24px 26px;margin-bottom:32px}
+.hero-q{font:800 clamp(26px,3.4vw,38px)/1.05 var(--f-display);margin:0 0 6px;letter-spacing:-.02em;text-wrap:balance}
+.hero-sub{margin:0;opacity:.85;max-width:56ch}
+.hero .chips{grid-column:1/-1}
+.hero .btns{grid-row:1;grid-column:2;flex-direction:column;align-items:stretch}
+@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}.hero .btns{grid-row:auto;grid-column:1;flex-direction:row}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:transparent;color:var(--accent-ink);border:1.5px solid color-mix(in srgb,var(--accent-ink) 45%,transparent);font-size:14px;padding:8px 14px}
+.chip[aria-pressed="true"]{background:var(--sun);color:var(--sun-ink);border-color:var(--sun)}
+.hero button.primary{background:var(--sun);color:var(--sun-ink);border-color:var(--sun)}
+.hero button:not(.primary):not(.chip){background:transparent;color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent-ink) 45%,transparent)}
+button.big{font-size:17px;padding:14px 22px}
+.live{justify-self:start;font-weight:600}
+dialog{width:min(760px,calc(100% - 24px));max-height:calc(100% - 24px);border:0;border-radius:22px;padding:0;background:var(--surface);color:var(--ink);overflow:auto}
+dialog::backdrop{background:rgb(6 6 24 / .62);backdrop-filter:blur(4px)}
+.pl{padding:20px 22px 22px;display:grid;gap:14px}
+.pl-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pl-top button{padding:6px 12px}
+.pl-hud{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.pl-age{font:800 clamp(52px,9vw,84px)/.9 var(--f-display);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.pl-bal{font:600 clamp(26px,4.5vw,40px)/1 var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--accent)}
+.pl-hud .l{font-size:13px;color:var(--muted)} .pl-hud .r .l{text-align:right}
+.pl-chart{width:100%;height:200px;display:block}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);align-items:center}
+.sw{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--accent)}
+.sw.auto{background:repeating-linear-gradient(90deg,var(--muted) 0 5px,transparent 5px 9px)}
+.pl-event{border:2px solid var(--ink);border-radius:16px;padding:16px 18px;display:grid;gap:10px;animation:pop .25s ease both}
+@keyframes pop{from{transform:scale(.97)}to{transform:none}}
+.pl-event h3{font:800 22px/1.15 var(--f-display);margin:0;text-wrap:balance}
+.pl-event .q{margin:0;color:var(--muted);font-weight:600}
+.opts{display:grid;gap:8px}
+.opts button{text-align:left;border-radius:12px;display:flex;gap:10px;align-items:center;padding:12px 14px}
+.opts button:not(:disabled):hover{border-color:var(--accent)}
+.opts button.picked{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.opts button:disabled:not(.picked){opacity:.4}
+kbd{font:600 12px var(--f-mono);border:1px solid currentColor;border-radius:5px;padding:1px 6px;opacity:.7}
+.out{margin:0;font-weight:600}
+.pl-end{display:grid;gap:14px}
+.pl-end h3{font:800 clamp(24px,3.5vw,32px)/1.1 var(--f-display);margin:0;text-wrap:balance}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:130px minmax(0,1fr) 72px;gap:10px;align-items:center;font-size:14px}
+.bar i{display:block;height:14px;border-radius:7px;background:var(--muted);transform-origin:left;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
+.bar.you i{background:var(--accent)} .bar.doom i{background:var(--bad)}
+.bar b{font:600 14px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+@keyframes grow{from{transform:scaleX(.02)}to{transform:none}}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{font:600 12px var(--f-mono);padding:5px 10px;border-radius:999px;background:var(--sun);color:var(--sun-ink)}
+.lesson{margin:0;color:var(--muted)}
+.copied{font-size:13px;color:var(--good);margin:0}
+@media (prefers-reduced-motion:reduce){.card,.pl-event,.bar i{animation:none}}
+</style></head><body>
+
+<div class="wrap">
+<header>
+  <h1 class="brand">Hope<span>scroll</span></h1>
+  <p class="lede">Doomscrolling shows you <b>one bad future</b> at a time. This feed shows you <b>a thousand</b>, crashes and layoffs included, and what one small habit does in every one of them.</p>
+</header>
+
+<section class="hero" aria-labelledby="heroQ">
+  <div class="hero-txt">
+    <h2 id="heroQ" class="hero-q">What keeps you up at night?</h2>
+    <p class="hero-sub">Pick your fears. We'll make every one of them happen to you, then you live through it year by year and make the calls.</p>
+  </div>
+  <div class="chips" id="fears"></div>
+  <div class="btns"><button class="primary big" id="stress">Make them all happen ▶</button><button id="randomPlay">Play a random future</button></div>
+</section>
+
+<div class="grid">
+<aside class="panel" aria-label="Your plan">
+  <div class="eyebrow">Your plan</div>
+  <div class="ctl">
+    <div class="ctl-row"><label for="age">I'm</label><output id="ageOut" for="age"></output></div>
+    <input id="age" type="range" min="16" max="35" value="22">
+  </div>
+  <div class="ctl">
+    <div class="ctl-row"><label for="amt">I could put away</label><output id="amtOut" for="amt"></output></div>
+    <input id="amt" type="range" min="5" max="500" step="5" value="100">
+  </div>
+  <label class="toggle"><input id="match" type="checkbox"> <span><b>My employer matches</b> what I put in (many group plans do)</span></label>
+
+  <div class="eyebrow">1,000 futures, ages <span id="ageA"></span>–65</div>
+  <canvas class="fan" id="fan" role="img" aria-label="Fan chart of savings across 1,000 simulated futures"></canvas>
+  <p class="verdict" id="verdict"></p>
+  <div class="stats">
+    <div class="stat"><div class="n" id="sTyp"></div><div class="l">typical future at 65</div></div>
+    <div class="stat"><div class="n" id="sInc"></div><div class="l">per month, for life, in an unlucky future</div></div>
+  </div>
+  <p class="insight" id="insight"></p>
+  <p class="fine">Amounts are in today's dollars. Each future draws its own yearly returns (balanced portfolio, about 4.5% above inflation on average, swinging ±10%) plus 1–4 shocks. Illustrative only, not financial advice.</p>
+</aside>
+
+<main>
+  <div class="feedhead">
+    <h2>Your futures</h2>
+    <div class="counter">scrolled <b id="cScroll">0</b> · bad news survived <b id="cBad">0</b></div>
+  </div>
+  <div class="feed" id="feed"></div>
+</main>
+</div>
+</div>
+
+<dialog id="player" aria-label="Live a future">
+  <div class="pl">
+    <div class="pl-top"><span class="eyebrow" id="plTitle"></span><button id="plClose">Close</button></div>
+    <div class="pl-hud">
+      <div><div class="pl-age" id="plAge">22</div><div class="l">your age · <span id="plYear"></span></div></div>
+      <div class="r"><div class="pl-bal" id="plBal">$0</div><div class="l">your savings, today's dollars</div></div>
+    </div>
+    <canvas class="pl-chart" id="plChart" aria-hidden="true"></canvas>
+    <div class="legend"><span><span class="sw"></span>You</span><span><span class="sw auto"></span>Autopilot you</span></div>
+    <div class="pl-event" id="plEvent" hidden></div>
+    <div class="pl-end" id="plEnd" hidden></div>
+    <button id="plSkip">Skip to the next decision ⏩</button>
+  </div>
+</dialog>
+
+<script>
+(()=>{
+const N=1000, MAXY=50, Y0=new Date().getFullYear();
+const $=id=>document.getElementById(id);
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const gauss=r=>Math.sqrt(-2*Math.log(1-r()))*Math.cos(2*Math.PI*r());
+
+// Shocks. tone: bad | good. Each edits the world's returns (r) or contribution multipliers (c) from year t.
+const EVENTS=[
+ {k:'crash',tone:'bad',h:'Markets drop 34% in a single year. Headlines say "worst since 2008."',fx:(w,t)=>{w.r[t]=-.34;w.r[t+1]=.18}},
+ {k:'ai',tone:'bad',h:'AI automation reaches your field. You are between jobs for a year.',fx:(w,t)=>{w.c[t]=0}},
+ {k:'stag',tone:'bad',h:'Stagflation. Prices climb, markets go nowhere for three years.',fx:(w,t)=>{for(let j=t;j<t+3;j++)w.r[j]=-.02}},
+ {k:'rent',tone:'bad',h:'Rent jumps 20%. You halve your savings for two years.',fx:(w,t)=>{w.c[t]*=.5;w.c[t+1]*=.5}},
+ {k:'pandemic',tone:'bad',h:'Another pandemic. Markets fall 22%, then rebound hard.',fx:(w,t)=>{w.r[t]=-.22;w.r[t+1]=.24}},
+ {k:'life',tone:'bad',h:'Life happens: a family emergency. Savings pause for a year.',fx:(w,t)=>{w.c[t]=0}},
+ {k:'boom',tone:'good',h:'Clean-energy boom. Markets gain 27% in a year.',fx:(w,t)=>{w.r[t]=.27}},
+ {k:'raise',tone:'good',h:'You switch careers. Bigger paycheque, so you save 50% more.',fx:(w,t)=>{for(let j=t;j<MAXY;j++)w.c[j]*=1.5}},
+];
+const worlds=[];
+for(let i=0;i<N;i++){
+  const r=mulberry(i*7919+13), w={id:i,r:[],c:Array(MAXY+3).fill(1),ev:[]};
+  for(let j=0;j<MAXY+3;j++)w.r.push(.045+.10*gauss(r));
+  const n=1+Math.floor(r()*4), used=new Set();
+  while(w.ev.length<n){const e=EVENTS[Math.floor(r()*EVENTS.length)]; if(used.has(e.k))continue; used.add(e.k); w.ev.push({e,t:2+Math.floor(r()*40)})}
+  w.ev.sort((a,b)=>a.t-b.t); w.ev.forEach(({e,t})=>e.fx(w,t));
+  worlds.push(w);
+}
+function sim(w,monthly,years,delay,match){
+  let b=0;const p=[0];
+  for(let j=0;j<years;j++){const add=j<delay?0:monthly*12*w.c[j]*(match?2:1); b=b*(1+w.r[j])+add*(1+w.r[j]/2); if(b<0)b=0; p.push(b)}
+  return p;
+}
+const pct=(arr,q)=>arr[Math.min(arr.length-1,Math.floor(q*arr.length))];
+const money=v=>'$'+Math.round(v).toLocaleString('en-CA');
+const kmoney=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1e4?'$'+Math.round(v/1000)+'k':money(v);
+
+let S={}, paths=[];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function setupCanvas(c,h){const d=devicePixelRatio||1,W=c.clientWidth,H=h||c.clientHeight;c.width=W*d;c.height=H*d;const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);return[x,W,H]}
+
+function drawFan(){
+  const c=$('fan'),[x,W,H]=setupCanvas(c),years=S.years,pad={l:44,r:10,t:10,b:22};
+  const bands=[.1,.25,.5,.75,.9].map(q=>{const out=[];for(let j=0;j<=years;j++){const col=paths.map(p=>p[j]).sort((a,b)=>a-b);out.push(pct(col,q))}return out});
+  const max=bands[4][years]*1.05||1, X=j=>pad.l+(W-pad.l-pad.r)*j/years, Y=v=>H-pad.b-(H-pad.t-pad.b)*Math.min(v,max)/max;
+  x.clearRect(0,0,W,H);x.font='11px '+css('--f-mono');x.fillStyle=css('--muted');x.strokeStyle=css('--line');x.lineWidth=1;
+  for(let k=0;k<=3;k++){const v=max*k/3,y=Y(v);x.beginPath();x.moveTo(pad.l,y);x.lineTo(W-pad.r,y);x.stroke();x.textAlign='right';x.fillText(kmoney(v),pad.l-6,y+4)}
+  x.textAlign='center';[0,.5,1].forEach(f=>{const j=Math.round(years*f);x.fillText('age '+(S.age+j),Math.min(Math.max(X(j),pad.l+20),W-pad.r-24),H-6)});
+  // a few real individual futures, faint
+  x.strokeStyle=css('--muted');x.globalAlpha=.18;
+  for(let i=0;i<40;i++){const p=paths[i*25];x.beginPath();p.forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));x.stroke()}
+  x.globalAlpha=1;
+  const band=(lo,hi,a)=>{x.beginPath();lo.forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));for(let j=years;j>=0;j--)x.lineTo(X(j),Y(hi[j]));x.closePath();x.globalAlpha=a;x.fillStyle=css('--accent');x.fill();x.globalAlpha=1};
+  band(bands[0],bands[4],.14);band(bands[1],bands[3],.22);
+  x.strokeStyle=css('--accent');x.lineWidth=2.5;x.beginPath();bands[2].forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));x.stroke();
+  x.strokeStyle=css('--sun');x.lineWidth=2;x.setLineDash([4,3]);x.beginPath();bands[0].forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));x.stroke();x.setLineDash([]);
+}
+
+function recompute(){
+  S={age:+$('age').value,amt:+$('amt').value,match:$('match').checked};S.years=65-S.age;
+  $('ageOut').textContent=S.age;$('amtOut').textContent='$'+S.amt+'/mo';$('ageA').textContent=S.age;
+  paths=worlds.map(w=>sim(w,S.amt,S.years,0,S.match));
+  const fin=paths.map(p=>p[S.years]).sort((a,b)=>a-b);
+  const late=worlds.map(w=>sim(w,S.amt,S.years,10,S.match)[S.years]).sort((a,b)=>a-b);
+  S.p10=pct(fin,.1);S.p50=pct(fin,.5);S.late50=pct(late,.5);
+  $('verdict').innerHTML=`In 9 out of 10 futures, 65-year-old you has at least <em>${kmoney(S.p10)}</em>.`;
+  $('sTyp').textContent=kmoney(S.p50);$('sInc').textContent=money(S.p10*.04/12);
+  $('insight').innerHTML=S.p10>S.late50
+    ? `<b>Starting now beats luck.</b> Your unluckiest 10% of futures still end higher than the <i>typical</i> future where you wait until ${S.age+10} to start (${kmoney(S.late50)}).`
+    : `<b>Time is the lever.</b> Waiting until ${S.age+10} to start turns the typical future from ${kmoney(S.p50)} into ${kmoney(S.late50)}, with the same $${S.amt}/mo.`;
+  drawFan();
+  // refresh numbers already in the feed
+  document.querySelectorAll('.card[data-w]').forEach(fillCard);
+}
+
+// ---------- Feed ----------
+const order=[...Array(N).keys()];{const r=mulberry(42);for(let i=N-1;i>0;i--){const j=Math.floor(r()*(i+1));[order[i],order[j]]=[order[j],order[i]]}}
+let next=0, scrolled=0, badSeen=0, seenSet=new Set();
+const HARD={crash:y=>`The ${y} crash happened. I watched my balance drop by a third and did nothing, which turned out to be the right move.`,
+ ai:y=>`${y} was the year the AI layoffs reached my team. Eight months of job hunting. I never had to touch the retirement money.`,
+ stag:y=>`Around ${y} everything got expensive and nothing grew for a while. I kept the transfer on autopilot and mostly forgot about it.`,
+ rent:y=>`Rent went up hard in ${y}. I cut savings in half for a couple of years. Half still counted.`,
+ pandemic:y=>`Yes, another pandemic, in ${y}. Markets panicked, then recovered faster than the news did.`,
+ life:y=>`${y} was the hardest year of my life, and I paused saving. Restarting was easier because the habit was already there.`};
+const SIGN=['You were right to worry. You were also right to start anyway.','Thanks for starting when it felt pointless.','Go outside today. I’ve got this part covered.','I still doomscroll sometimes. I just don’t panic anymore.','Small and boring worked. Who knew.'];
+
+function fillCard(card){
+  const w=worlds[+card.dataset.w], p=sim(w,S.amt,S.years,0,S.match), fin=p[S.years];
+  const evs=w.ev.filter(e=>e.t<S.years);
+  card.querySelector('.card-top span:last-child').textContent=`${Y0} → ${Y0+S.years}`;
+  card.querySelector('.timeline').innerHTML=(evs.length?evs:[{quiet:1}]).map(e=>e.quiet
+    ?`<li><span class="yr">${Y0+S.years}</span><span class="head">Nothing dramatic happens. That's allowed too.</span></li>`
+    :`<li><span class="yr ${e.e.tone}">${Y0+e.t}</span><span class="head">${e.e.h}</span></li>`).join('');
+  const rank=paths.filter(q=>q[S.years]<fin).length/N;
+  card.querySelector('.big').textContent=kmoney(fin);
+  card.querySelector('.sub').textContent=`at 65 · ≈ ${money(fin*.04/12)}/mo for life · luckier than ${Math.round(rank*100)}% of futures`;
+  const hard=evs.find(e=>HARD[e.e.k]), r=mulberry(w.id+1);
+  const open=hard?HARD[hard.e.k](Y0+hard.t):`Honestly? Nothing went perfectly, but nothing fell apart either.`;
+  card.querySelector('.postcard').innerHTML=`<p>Hey, it's you. ${open}</p><p>That ${'$'+S.amt} a month${S.match?' (plus the match)':''} is ${kmoney(fin)} now.</p><p>${SIGN[Math.floor(r()*SIGN.length)]}</p><p class="sig">— you, 65</p>`;
+  requestAnimationFrame(()=>drawSpark(card.querySelector('.spark'),p,evs));
+}
+function drawSpark(c,p,evs){
+  const[x,W,H]=setupCanvas(c,110),max=Math.max(...p)*1.08||1,X=j=>6+(W-12)*j/(p.length-1),Y=v=>H-8-(H-16)*v/max;
+  x.clearRect(0,0,W,H);x.beginPath();p.forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));
+  x.lineTo(X(p.length-1),H-8);x.lineTo(X(0),H-8);x.closePath();x.globalAlpha=.12;x.fillStyle=css('--accent');x.fill();x.globalAlpha=1;
+  x.beginPath();p.forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));x.strokeStyle=css('--accent');x.lineWidth=2.5;x.stroke();
+  evs.forEach(e=>{const j=e.t+1;x.beginPath();x.arc(X(j),Y(p[j]),5,0,7);x.fillStyle=css(e.e.tone==='bad'?'--bad':'--good');x.fill();x.strokeStyle=css('--surface');x.lineWidth=2;x.stroke()});
+  const j=p.length-1;x.beginPath();x.arc(X(j),Y(p[j]),5,0,7);x.fillStyle=css('--sun');x.fill();
+}
+function addCard(){
+  const id=order[next++%N],el=document.createElement('article');
+  el.className='card';el.dataset.w=id;
+  el.innerHTML=`<div class="card-top"><span>Future #${String(id+1).padStart(4,'0')} of 1,000</span><span>${Y0} → ${Y0+S.years}</span></div>
+  <div class="card-body"><ul class="timeline"></ul><canvas class="spark" aria-hidden="true"></canvas>
+  <div class="result"><span class="big"></span><span class="sub"></span></div><div class="postcard"></div>
+  <button class="live primary" data-live="${id}">Live this future yourself ▶</button></div>`;
+  $('feed').insertBefore(el,$('sentinel'));fillCard(el);io.observe(el);
+}
+const MOVES=[
+ ['Open a TFSA','About 15 minutes online at most banks. Growth inside it is never taxed.'],
+ ['Automate it on payday','Even $10. The futures above assume you never have to remember.'],
+ ['Ask HR one question','"Does our group plan match my contributions?" A match doubles every dollar.'],
+ ['Mute one doom account','Swap one feed that makes you feel helpless for one that shows you options.']];
+let nudgeN=0;
+function addNudge(){
+  const el=document.createElement('section');el.className='nudge';nudgeN++;
+  if(nudgeN%2){
+    const bump=S.amt<100?25:50, w=worlds.map(w=>sim(w,S.amt+bump,S.years,0,S.match)[S.years]).sort((a,b)=>a-b);
+    el.innerHTML=`<div class="eyebrow">Pause</div><h3>You just scrolled ${scrolled} futures. None of them were the end of the world.</h3>
+    <p>Adding $${bump}/mo lifts your unluckiest-10% future from ${kmoney(S.p10)} to ${kmoney(pct(w,.1))}. That's roughly ${bump<50?'one takeout order':'two takeout orders'} a month.</p>
+    <div class="btns"><button class="primary" data-bump="${bump}">Make it $${S.amt+bump}/mo</button><button data-skip>Keep scrolling</button></div>`;
+  }else{
+    let done={};try{done=JSON.parse(localStorage.getItem('hs-moves')||'{}')}catch(e){}
+    el.innerHTML=`<div class="eyebrow">Tiny moves this week</div><h3>Pick one. Five minutes counts.</h3>
+    <ul class="moves">${MOVES.map((m,i)=>`<li><label><input type="checkbox" id="mv${nudgeN}-${i}" data-mv="${i}" ${done[i]?'checked':''}><span>${m[0]}<small>${m[1]}</small></span></label></li>`).join('')}</ul>`;
+    el.addEventListener('change',e=>{const i=e.target.dataset.mv;if(i==null)return;done[i]=e.target.checked;try{localStorage.setItem('hs-moves',JSON.stringify(done))}catch(_){}});
+  }
+  el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.bump){$('amt').value=Math.min(500,S.amt+ +b.dataset.bump);recompute();b.textContent='Done. Every future just moved up.';b.disabled=true}
+    else el.remove()});
+  $('feed').insertBefore(el,$('sentinel'));
+}
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting||seenSet.has(e.target))return;seenSet.add(e.target);scrolled++;
+  badSeen+=worlds[+e.target.dataset.w].ev.filter(v=>v.t<S.years&&v.e.tone==='bad').length;
+  $('cScroll').textContent=scrolled;$('cBad').textContent=badSeen;
+  if(scrolled%4===0)addNudge();
+}),{threshold:.6});
+
+// ---------- Live-a-future game ----------
+// Each shock asks for a decision. def = what "Autopilot you" does; panic/gamble/drift = what "Doomscroll you" does.
+const CHOICES={
+ crash:[{l:'Sell everything until it calms down',tag:'panic',fx:(G,t)=>{G.r[t+1]=0;G.r[t+2]=0},m:y=>`We sold in the ${y} crash. Missing the rebound still stings.`},
+  {l:'Do nothing. Let autopilot run.',tag:'calm',def:1,bd:'Held through a crash',m:y=>`When the ${y} crash hit, you didn't sell. I think about that a lot.`},
+  {l:"Buy more while it's on sale",tag:'bold',bd:'Bought the dip',fx:(G,t)=>{G.c[t+1]*=2;G.c[t+2]*=2},m:y=>`You bought more in the ${y} crash. Scariest smart thing we ever did.`}],
+ ai:[{l:'Cash out your investments to cover rent',tag:'panic',fx:G=>{G.b*=.6;return 'Withdrawals plus taxes took 40% of your savings.'},m:y=>`Losing the job in ${y} was awful, and cashing out made it cost twice.`},
+  {l:'Live on your emergency fund, pause saving a year',tag:'calm',def:1,bd:'Emergency fund hero',fx:(G,t)=>{G.c[t+1]=0},m:y=>`The ${y} layoff was rough. The emergency fund was the hero.`},
+  {l:'Pick up gig work, keep $25/mo going',tag:'bold',bd:'Never fully stopped',fx:G=>{G.b+=300},m:y=>`Even during the ${y} layoff we kept $25 a month going. Stubborn. Good.`}],
+ stag:[{l:"Stop investing until it's clear",tag:'panic',fx:(G,t)=>{for(let j=t+1;j<t+5;j++)G.c[j]=0},m:y=>`We stopped investing in ${y} "until it was clear." It never felt clear.`},
+  {l:'Keep the autopilot on',tag:'calm',def:1,bd:'Boring on purpose',m:y=>`Those flat years after ${y} were boring. Boring worked.`}],
+ rent:[{l:'Stop saving for three years',tag:'panic',fx:(G,t)=>{for(let j=t+1;j<t+4;j++)G.c[j]=0},m:y=>`When rent spiked in ${y} we stopped saving for three years. Restarting was hard.`},
+  {l:'Halve your savings for a bit',tag:'calm',def:1,m:y=>`Rent went up hard in ${y}. Half still counted.`},
+  {l:'Get a roommate, keep saving fully',tag:'bold',bd:'Roommate era',fx:(G,t)=>{G.c[t+1]=1},m:y=>`The roommate years after ${y} were chaotic and worth it.`}],
+ pandemic:[{l:'Sell before it gets worse',tag:'panic',fx:(G,t)=>{G.r[t+1]=0},m:y=>`We sold in the ${y} pandemic and watched the rebound from the sidelines.`},
+  {l:'Hold and go touch grass',tag:'calm',def:1,bd:'Touched grass',m:y=>`During the ${y} pandemic you held. Markets recovered faster than the news did.`}],
+ life:[{l:'Pause and restart "someday"',tag:'panic',fx:(G,t)=>{for(let j=t+1;j<t+6;j++)G.c[j]=0},m:y=>`After ${y}, "someday" turned into five years. Restart sooner than we did.`},
+  {l:'Pause one year, then restart',tag:'calm',def:1,bd:'Came back',m:y=>`${y} was the hardest year. Restarting was easy because the habit stuck.`}],
+ boom:[{l:"Go all-in on your friend's meme coin",tag:'gamble',fx:G=>{if(G.rng()<.3){G.b*=2.2;return 'It mooned. +120%. Lucky this time.'}G.b*=.35;return 'It rugged. −65% overnight.'},m:y=>`About the ${y} meme coin. We don't talk about the meme coin.`},
+  {l:'Stay balanced',tag:'calm',def:1,bd:'Immune to hype',m:y=>`Everyone tried to get rich quick in ${y}. We got rich slow. Still here.`},
+  {l:'Take 10% for a trip with friends',tag:'fun',bd:'Lived a little',fx:G=>{G.b*=.9},m:y=>`We took that trip in ${y}. Zero regrets. Some fun is part of the plan.`}],
+ raise:[{l:'Spend the raise (you earned it)',tag:'drift',fx:(G,t)=>{for(let j=t+1;j<MAXY+3;j++)G.c[j]/=1.5},m:y=>`The ${y} raise disappeared into lifestyle. Fun, but it's gone.`},
+  {l:'Save the extra',tag:'calm',def:1,bd:'Paid future you',m:y=>`When the ${y} raise came, you saved the extra. Future me says thanks.`},
+  {l:'Split it: half fun, half future',tag:'bold',bd:'Balanced',fx:(G,t)=>{for(let j=t+1;j<MAXY+3;j++)G.c[j]/=1.2},m:y=>`Half the ${y} raise went to fun, half to us. Balanced.`}]};
+const REACT={panic:"Noted. Let's see how that plays out.",calm:'Steady. Future you nods.',bold:'Bold. Future you is intrigued.',fun:'Living a little is allowed.',drift:'Fair. It happens to everyone.'};
+const autoPick=(e,o)=>o.findIndex(x=>x.def), doomPick=(e,o)=>{const i=o.findIndex(x=>/panic|gamble|drift/.test(x.tag));return i<0?autoPick(e,o):i};
+async function runWorld(w,evs,pick,onYear){
+  const G={b:0,path:[0],r:w.r.slice(),c:w.c.slice(),rng:mulberry(w.id+99),picks:[]};
+  for(let j=0;j<S.years;j++){
+    const add=S.amt*12*G.c[j]*(S.match?2:1);G.b=Math.max(0,G.b*(1+G.r[j])+add*(1+G.r[j]/2));G.path.push(G.b);
+    if(onYear)await onYear(G,j);
+    for(const e of evs.filter(e=>e.t===j)){
+      const opts=CHOICES[e.e.k],o=opts[await pick(e,opts)],out=o.fx&&o.fx(G,j);
+      G.picks.push({e,o,out});G.path[G.path.length-1]=G.b;if(onYear)await onYear(G,j,{o,out});
+    }
+  }
+  return G;
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms)), RM=matchMedia('(prefers-reduced-motion: reduce)').matches, PL=$('player');
+let fast=false,playing=0;
+function drawPl(p,ap,evs){
+  const c=$('plChart'),[x,W,H]=setupCanvas(c,200),n=S.years,max=Math.max(...ap,...p)*1.1||1,X=j=>8+(W-16)*j/n,Y=v=>H-10-(H-20)*v/max;
+  const line=(arr,col,lw,dash)=>{x.beginPath();arr.forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));x.strokeStyle=col;x.lineWidth=lw;x.setLineDash(dash||[]);x.stroke();x.setLineDash([])};
+  x.clearRect(0,0,W,H);
+  line(ap.slice(0,p.length),css('--muted'),1.5,[5,4]);
+  x.beginPath();p.forEach((v,j)=>j?x.lineTo(X(j),Y(v)):x.moveTo(X(j),Y(v)));x.lineTo(X(p.length-1),H-10);x.lineTo(X(0),H-10);x.closePath();x.globalAlpha=.14;x.fillStyle=css('--accent');x.fill();x.globalAlpha=1;
+  line(p,css('--accent'),3);
+  evs.filter(e=>e.t+1<p.length).forEach(e=>{x.beginPath();x.arc(X(e.t+1),Y(p[e.t+1]),5,0,7);x.fillStyle=css(e.e.tone==='bad'?'--bad':'--good');x.fill()});
+  const j=p.length-1;x.beginPath();x.arc(X(j),Y(p[j]),6,0,7);x.fillStyle=css('--sun');x.fill();x.strokeStyle=css('--surface');x.lineWidth=2;x.stroke();
+}
+function decide(e,opts){
+  fast=false;$('plSkip').hidden=true;const box=$('plEvent');box.hidden=false;
+  box.innerHTML=`<div class="eyebrow">${Y0+e.t} · you're ${S.age+e.t+1}</div><h3>${e.e.h}</h3><p class="q">What do you do?</p>
+  <div class="opts">${opts.map((o,i)=>`<button data-i="${i}"><kbd>${i+1}</kbd><span>${o.l}</span></button>`).join('')}</div>`;
+  return new Promise(res=>{
+    const go=i=>{removeEventListener('keydown',kd);box.querySelectorAll('button').forEach(b=>b.disabled=true);box.querySelector(`[data-i="${i}"]`).classList.add('picked');res(i)};
+    const kd=ev=>{const n=+ev.key-1;if(n>=0&&n<opts.length)go(n)};addEventListener('keydown',kd);
+    box.querySelectorAll('button').forEach(b=>b.onclick=()=>go(+b.dataset.i));box.querySelector('button').focus();
+  });
+}
+async function play(w,title){
+  const run=++playing;fast=false;
+  const evs=w.ev.filter(e=>e.t<S.years-1);
+  const auto=await runWorld(w,evs,autoPick),doom=await runWorld(w,evs,doomPick);
+  $('plTitle').textContent=title;$('plEvent').hidden=true;$('plEnd').hidden=true;$('plSkip').hidden=false;
+  if(!PL.open)PL.showModal();
+  try{
+    const G=await runWorld(w,evs,decide,async(G,j,res)=>{
+      if(run!==playing)throw 'stop';
+      $('plAge').textContent=S.age+j+1;$('plYear').textContent=Y0+j+1;$('plBal').textContent=money(G.b);drawPl(G.path,auto.path,evs);
+      if(res){const box=$('plEvent');box.insertAdjacentHTML('beforeend',`<p class="out">${res.out||REACT[res.o.tag]}</p>`);await sleep(RM?400:1500);if(run!==playing)throw 'stop';box.hidden=true;$('plSkip').hidden=false}
+      else if(!fast)await sleep(RM?15:110);
+    });
+    endScreen(G,auto,doom,title,w);
+  }catch(e){if(e!=='stop')throw e}
+}
+function endScreen(G,auto,doom,title,w){
+  $('plSkip').hidden=true;
+  const diff=G.b-auto.b,rows=[['You',G.b,'you'],['Autopilot you',auto.b,'auto'],['Doomscroll you',doom.b,'doom']],m=Math.max(...rows.map(r=>r[1]))||1;
+  const badges=[...new Set(G.picks.map(p=>p.o.bd).filter(Boolean))];
+  const head=!G.picks.length?'A quiet life. Autopilot did all the work.':Math.abs(diff)<500?'You matched autopilot. Calm is a superpower.':diff>0?`Your calls added ${kmoney(diff)} on top of autopilot.`:`Your calls cost ${kmoney(-diff)} versus autopilot.`;
+  const memos=G.picks.slice(-3).map(p=>`<p>${p.o.m(Y0+p.e.t)}</p>`).join('');
+  const share=`I lived ${title} on Hopescroll and ended at 65 with ${kmoney(G.b)} (autopilot me: ${kmoney(auto.b)}, doomscroll me: ${kmoney(doom.b)}). Same world, same luck. Different choices.`;
+  $('plEnd').hidden=false;
+  $('plEnd').innerHTML=`<div class="eyebrow">Age 65 · ${Y0+S.years}</div><h3>${head}</h3>
+  <div class="bars">${rows.map(r=>`<div class="bar ${r[2]}"><span>${r[0]}</span><i style="width:${Math.max(2,r[1]/m*100)}%"></i><b>${kmoney(r[1])}</b></div>`).join('')}</div>
+  <p class="lesson">${G.b-doom.b<500&&auto.b-doom.b>=500?`You played it exactly like Doomscroll you. In the same world, with the same luck, Autopilot you ended ${kmoney(auto.b-doom.b)} ahead just by not reacting. Rematch?`:`Same world, same luck. Doomscroll you panic-sold, cashed out and chased hype, and ended ${kmoney(Math.max(0,G.b-doom.b))} behind you. The gap is decisions, not destiny.`}</p>
+  ${badges.length?`<div class="badges">${badges.map(b=>`<span class="badge">${b}</span>`).join('')}</div>`:''}
+  <div class="postcard"><p>Hey, it's you, 65.</p>${memos}<p>That $${S.amt} a month is ${kmoney(G.b)} now. You were right to start anyway.</p><p class="sig">— you</p></div>
+  <div class="btns"><button class="primary" id="plAgain">Play another future</button><button id="plReplay">Replay this future</button><button id="plCopy">Copy my result</button></div><p class="copied" id="plCopied" hidden></p>`;
+  $('plAgain').onclick=()=>play(worlds[order[next++%N]],'a random future');
+  $('plReplay').onclick=()=>play(w,title);
+  $('plCopy').onclick=()=>{const done=t=>{$('plCopied').hidden=false;$('plCopied').textContent=t};
+    navigator.clipboard.writeText(share).then(()=>done('Copied. Go post it.'),()=>done(share)).catch(()=>done(share))};
+  $('plEnd').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});
+}
+$('plSkip').onclick=()=>{fast=true};
+$('plClose').onclick=()=>{playing++;PL.close()};
+PL.addEventListener('close',()=>{playing++});
+$('feed').addEventListener('click',e=>{const b=e.target.closest('[data-live]');if(b)play(worlds[+b.dataset.live],`Future #${String(+b.dataset.live+1).padStart(4,'0')}`)});
+
+// Fear picker: build a world where everything you picked actually happens.
+const FEARS=[['ai','AI taking my job'],['rent','Never affording rent'],['crash','A market crash'],['stag','Prices that never stop rising'],['pandemic','Another pandemic'],['life','Life falling apart for a bit']];
+const picked=new Set(['ai','rent','crash']);
+$('fears').innerHTML=FEARS.map(([k,l])=>`<button class="chip" data-k="${k}" aria-pressed="${picked.has(k)}">${l}</button>`).join('');
+$('fears').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;const k=b.dataset.k;picked.has(k)?picked.delete(k):picked.add(k);b.setAttribute('aria-pressed',picked.has(k));
+  $('stress').textContent=picked.size?`Make ${picked.size===1?'it':picked.size===2?'both':'all '+picked.size} happen ▶`:'Pick at least one fear';$('stress').disabled=!picked.size});
+$('stress').onclick=()=>{
+  const keys=FEARS.map(f=>f[0]).filter(k=>picked.has(k)),r=mulberry(777),w={id:4242,r:[],c:Array(MAXY+3).fill(1),ev:[]};
+  for(let j=0;j<MAXY+3;j++)w.r.push(.045+.08*gauss(r));
+  const gap=Math.max(2,Math.floor((S.years-4)/keys.length));
+  keys.forEach((k,i)=>w.ev.push({e:EVENTS.find(x=>x.k===k),t:2+i*gap}));w.ev.forEach(({e,t})=>e.fx(w,t));
+  play(w,'your worst fears, all of them');
+};
+$('randomPlay').onclick=()=>play(worlds[order[next++%N]],'a random future');
+
+recompute();
+const sent=document.createElement('button');sent.id='sentinel';sent.className='more';sent.textContent='Show me another future';
+sent.onclick=()=>{for(let i=0;i<3;i++)addCard()};$('feed').append(sent);
+for(let i=0;i<5;i++)addCard();
+new IntersectionObserver(es=>{if(es[0].isIntersecting)for(let i=0;i<3;i++)addCard()},{rootMargin:'400px'}).observe(sent);
+
+['age','amt','match'].forEach(id=>$(id).addEventListener('input',recompute));
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(recompute,150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',recompute);
+new MutationObserver(recompute).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+document.fonts&&document.fonts.ready.then(recompute);
+// #demo opens the stress test; #demo-end auto-plays it with the bold choices (used for screenshots)
+if(/^#demo/.test(location.hash)){setTimeout(()=>$('stress').click(),300);
+  if(location.hash==='#demo-end')setInterval(()=>{fast=true;const o=[...document.querySelectorAll('#plEvent .opts button:not(:disabled)')];if(o.length)o[o.length>2?2:o.length-1].click()},200)}
+})();
+</script>
+</body></html>
